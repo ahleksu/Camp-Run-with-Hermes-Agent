@@ -4,7 +4,7 @@ Total time: 5 minutes. Run `python data/seed.py` first, so the escalation you sh
 
 ## The 5 minutes
 
-1. Problem (45 seconds). Say: "An admin who runs 12 branches cannot see which one needs help first. The answer sits in five places: deliveries, tickets, reviews, stock, and shifts."
+1. Problem (45 seconds). Say: "We are Bantay Suki. An admin who runs 12 branches cannot see which one needs help first. The answer sits in five places: deliveries, tickets, reviews, stock, and shifts."
 2. The pane (60 seconds). Open Command Center. Point at the headline sentence, then the red values. Click a branch to open its tickets, reviews, stockouts, and expiring stock. Say that this view needs no model turn, because the pane reads the same query core as the agent.
 3. The agent (90 seconds). Click "Brief me". Hermes loads the skill, calls `branch_scorecard`, drills into up to 3 branches, and proposes at most 3 actions with evidence.
 4. The action (60 seconds). Approve one escalation. Open the pane: "Recorded by Hermes" now shows it, and the branch's urgent count went up by one.

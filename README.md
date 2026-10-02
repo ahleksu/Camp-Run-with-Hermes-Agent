@@ -20,6 +20,8 @@ Everything runs **locally on your laptop** — no cloud, no accounts, no API key
 
 ## Suki Command Center (this fork's build)
 
+Built by team **Bantay Suki**. Write-up: https://ahleksu.github.io/Camp-Run-with-Hermes-Agent/ · Slides: https://ahleksu.github.io/Camp-Run-with-Hermes-Agent/deck/
+
 An admin view across all 12 branches: delivery on-time rate, open/urgent tickets, unreplied bad reviews, stockout risks, expiring stock, absence, and supplier slips. Terms are in [GLOSSARY.md](GLOSSARY.md); design decisions in [docs/adr](docs/adr).
 
 | Layer | Where | What |
