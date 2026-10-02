@@ -147,10 +147,10 @@ code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
 .split h2 { font-size: 80px; }
 .split .left p { margin-top: 32px; font-size: 32px; color: var(--ink-2); }
 .list { list-style: none; border-top: 4px solid var(--ink); align-self: center; width: 100%; }
-.list li { display: grid; grid-template-columns: 520px 1fr; gap: 32px; padding: 20px 0; border-bottom: 2px solid var(--rule); font-size: 27px; color: var(--ink-2); line-height: 1.35; }
-.list li code { font-size: 27px; font-weight: 600; color: var(--ink); }
+.list li { display: grid; grid-template-columns: 500px 1fr; gap: 32px; padding: 12px 0; border-bottom: 2px solid var(--rule); font-size: 25px; color: var(--ink-2); line-height: 1.3; }
+.list li code { font-size: 25px; font-weight: 600; color: var(--ink); }
 .list li.write code { color: var(--signal); }
-.list .group { display: block; padding: 22px 0 14px; font: 500 22px/1 var(--font-body); color: var(--ink-3); border-bottom-color: var(--ink); }
+.list .group { display: block; padding: 18px 0 10px; font: 500 22px/1 var(--font-body); color: var(--ink-3); border-bottom-color: var(--ink); }
 .steps { list-style: none; counter-reset: s; border-top: 4px solid var(--ink); align-self: center; width: 100%; }
 .steps li { counter-increment: s; display: grid; grid-template-columns: 80px 1fr; padding: 24px 0; border-bottom: 2px solid var(--rule); font-size: 32px; color: var(--ink-2); line-height: 1.35; }
 .steps li::before { content: counter(s); font: 800 40px/1.1 var(--font-display); color: var(--ink); }
@@ -292,24 +292,27 @@ aside.notes { display: none; }
       <div class="left">
         <div class="tag reveal">Layer 1 · MCP server</div>
         <h2 class="reveal">One tool, one business question.</h2>
-        <p class="reveal">No tool takes raw SQL. Only two tools write, and each write is logged to <code>ops_actions</code>.</p>
+        <p class="reveal">11 tools: 9 read and 2 write. No tool takes raw SQL, and each write is logged to <code>ops_actions</code>.</p>
       </div>
       <ul class="list reveal">
-        <li class="group">Read</li>
+        <li class="group">Read · 9 tools</li>
         <li><code>branch_scorecard</code><span>Every branch on seven measures</span></li>
         <li><code>list_open_tickets</code><span>Urgent first, then oldest</span></li>
         <li><code>list_unreplied_bad_reviews</code><span>With the review text</span></li>
         <li><code>list_stockout_risks</code><span>2 days of cover, no order coming</span></li>
         <li><code>list_expiring_stock</code><span>Within 3 days, cost at risk</span></li>
         <li><code>list_supplier_slips</code><span>Promise versus real lead time</span></li>
-        <li class="group">Write, after a yes</li>
+        <li><code>list_recent_actions</code><span>Past escalations and drafts</span></li>
+        <li><code>describe_sandbox</code><span>Tables, columns, and row counts</span></li>
+        <li><code>list_branches</code><span>Branch codes, cities, and delivery</span></li>
+        <li class="group">Write · 2 tools, after a yes</li>
         <li class="write"><code>escalate_ticket</code><span>Raise to urgent, log the reason</span></li>
         <li class="write"><code>draft_review_reply</code><span>Save a draft, never publish</span></li>
       </ul>
     </div>
   </div>
   <div class="chrome"><span class="mark"><span class="dot"></span>Layer 1</span><span>05</span></div>
-  <aside class="notes">Also mention: list_recent_actions stops repeat escalations, and 11 tests run on a temporary copy of the database. About 25 seconds.</aside>
+  <aside class="notes">7 of the 9 reads answer Command Center questions. describe_sandbox and list_branches help the agent find its way around the data. list_recent_actions stops repeat escalations. 11 tests run on a temporary copy of the database. About 25 seconds.</aside>
 </section>
 
 <!-- ========== 6. LAYER 2: SKILL ========== -->
