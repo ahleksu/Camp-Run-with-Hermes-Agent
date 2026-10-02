@@ -8,7 +8,8 @@ Total time: 5 minutes. Run `python data/seed.py` first, so the escalation you sh
 2. The pane (60 seconds). Open Command Center. Point at the headline sentence, then the red values. Click a branch to open its tickets, reviews, stockouts, and expiring stock. Say that this view needs no model turn, because the pane reads the same query core as the agent.
 3. The agent (90 seconds). Click "Brief me". Hermes loads the skill, calls `branch_scorecard`, drills into up to 3 branches, and proposes at most 3 actions with evidence.
 4. The action (60 seconds). Approve one escalation. Open the pane: "Recorded by Hermes" now shows it, and the branch's urgent count went up by one.
-5. Close (45 seconds). Say: "Hermes can only do two writes: escalate a ticket, or save a reply draft. Both are logged. Nothing is ever published."
+5. Optional, 20 seconds. In the Hermes Telegram bot, type `/brief`. It names the same three branches as the pane, with no model turn. `/bantay <request>` goes through the skill and still asks before a write.
+6. Close (45 seconds). Say: "Hermes can only do two writes: escalate a ticket, or save a reply draft. Both are logged. Nothing is ever published."
 
 ## Rubric map
 

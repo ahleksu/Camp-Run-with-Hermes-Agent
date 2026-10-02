@@ -182,7 +182,7 @@ code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
 .loop span { display: block; margin-top: 14px; font-size: 27px; line-height: 1.4; color: var(--ink-2); }
 
 /* ===========================================
-   SLIDE 10: GUARDRAILS
+   SLIDE 11: GUARDRAILS
    =========================================== */
 .guards { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 4px solid var(--ink); }
 .guard { padding: 40px 48px 0 0; }
@@ -190,7 +190,7 @@ code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
 .guard p { margin-top: 20px; font-size: 29px; color: var(--ink-2); line-height: 1.4; }
 
 /* ===========================================
-   SLIDE 11: CLOSE
+   SLIDE 12: CLOSE
    =========================================== */
 .close { background: var(--ink); color: var(--slide-bg); }
 .close .frame { justify-content: center; }
@@ -391,8 +391,35 @@ aside.notes { display: none; }
   <aside class="notes">Backup slide if the live demo fails. This is a real screenshot from the run. About 20 seconds.</aside>
 </section>
 
-<!-- ========== 10. GUARDRAILS ========== -->
+<!-- ========== 10. TELEGRAM ========== -->
 <section class="slide" aria-label="Slide 10">
+  <div class="frame">
+    <div class="split">
+      <div class="left">
+        <div class="tag reveal">Feature · Telegram commands</div>
+        <h2 class="reveal">The same answers, from your phone.</h2>
+        <p class="reveal">Seven read commands skip the model and share the pane's query core. <code>/bantay</code> asks the agent and still waits for a yes.</p>
+      </div>
+      <ul class="list reveal">
+        <li class="group">Read · no model turn</li>
+        <li><code>/brief</code><span>Top 3 branches to help first</span></li>
+        <li><code>/tickets</code><span>Urgent first, then oldest</span></li>
+        <li><code>/reviews</code><span>Bad reviews with no reply</span></li>
+        <li><code>/stockouts</code><span>2 days of cover, no order coming</span></li>
+        <li><code>/expiring</code><span>Within 3 days, cost at risk</span></li>
+        <li><code>/suppliers</code><span>Promise versus real lead time</span></li>
+        <li><code>/actions</code><span>Past escalations and drafts</span></li>
+        <li class="group">Agent · after a yes</li>
+        <li class="write"><code>/bantay &lt;request&gt;</code><span>Runs the skill, asks before writing</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Telegram</span><span>10</span></div>
+  <aside class="notes">Optional live moment: type /brief in the Telegram bot and compare the three branches with the pane. The read commands run scripts/bantay.py, which uses suki_core.py, so the numbers match. /bantay goes through the skill, so writes still need a yes. About 20 seconds.</aside>
+</section>
+
+<!-- ========== 11. GUARDRAILS ========== -->
+<section class="slide" aria-label="Slide 11">
   <div class="frame">
     <h2 class="reveal">What the agent can touch, and what it cannot.</h2>
     <div class="guards reveal">
@@ -401,12 +428,12 @@ aside.notes { display: none; }
       <div class="guard"><h3>A person says yes first.</h3><p>The skill asks "Go ahead?" with the exact text. Running a write twice changes nothing.</p></div>
     </div>
   </div>
-  <div class="chrome"><span class="mark"><span class="dot"></span>ADR 0002</span><span>10</span></div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>ADR 0002</span><span>11</span></div>
   <aside class="notes">Judges and admins need to trust what the agent can do. That is why the write surface is this small. About 20 seconds.</aside>
 </section>
 
-<!-- ========== 11. CLOSE ========== -->
-<section class="slide close" aria-label="Slide 11">
+<!-- ========== 12. CLOSE ========== -->
+<section class="slide close" aria-label="Slide 12">
   <div class="frame">
     <h2 class="reveal">Ask Hermes where to send help. Approve what it does next.</h2>
     <div class="links reveal">
@@ -416,7 +443,7 @@ aside.notes { display: none; }
       <span>Setup</span><span>docs/SETUP.md · 4 commands</span>
     </div>
   </div>
-  <div class="chrome"><span class="mark"><span class="dot"></span>Bantay Suki · Suki Command Center</span><span>11</span></div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Bantay Suki · Suki Command Center</span><span>12</span></div>
   <aside class="notes">Close on the two sentences, say "We are Bantay Suki, thank you", then take questions.</aside>
 </section>
 

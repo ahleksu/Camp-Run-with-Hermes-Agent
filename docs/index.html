@@ -229,6 +229,7 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
       <a href="#problem">Problem</a>
       <a href="#how">How it works</a>
       <a href="#layers">Layers</a>
+      <a href="#telegram">Telegram</a>
       <a href="#run">Run it</a>
       <a href="deck/">Slides</a>
     </nav>
@@ -395,6 +396,38 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
         <p>This is the agent's own output from the run in the screenshot. Each action cites a ticket or review it read, with the number that justifies it.</p>
         <p>Nothing is written yet at this point. The admin answers yes or no for each action.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- === TELEGRAM === -->
+<section class="block" id="telegram">
+  <div class="wrap">
+    <div class="head">
+      <h2>The same answers in Telegram.</h2>
+      <p>An admin away from the desk can type a command in the Hermes Telegram bot and get the answer back in a second. The reads never wait for a model.</p>
+    </div>
+    <div class="layer">
+      <div class="intro">
+        <div class="layer-tag">Feature · Telegram commands</div>
+        <h3>Seven reads that skip the model, one that asks the agent.</h3>
+        <p>Each read command is a Hermes <code>quick_command</code> that runs <code>scripts/bantay.py</code>. The script calls the same <code>suki_core.py</code> as the MCP server and the pane, so a number in Telegram matches the number in the pane.</p>
+        <p><code>/bantay</code> hands a plain request to the skill, for example <code>/bantay escalate TKT-01471</code>. It shows the exact ticket and asks "Go ahead?" before it writes, as it does in the desktop.</p>
+      </div>
+      <table class="tools">
+        <tbody>
+          <tr class="group"><td colspan="2">Read, no model turn</td></tr>
+          <tr><td><code>/brief</code></td><td>Top 3 branches to help first, ranked like the pane, plus loyalty points about to expire.</td></tr>
+          <tr><td><code>/tickets</code></td><td>Open tickets, urgent first, then oldest.</td></tr>
+          <tr><td><code>/reviews</code></td><td>1 or 2 star reviews with no reply, with the review text.</td></tr>
+          <tr><td><code>/stockouts</code></td><td>Products with 2 days of cover or less and no order coming.</td></tr>
+          <tr><td><code>/expiring</code></td><td>Stock that expires within 3 days, largest cost at risk first.</td></tr>
+          <tr><td><code>/suppliers</code></td><td>Suppliers ranked by how far real lead time runs past the promise.</td></tr>
+          <tr><td><code>/actions</code></td><td>What Hermes already escalated or drafted.</td></tr>
+          <tr class="group"><td colspan="2">Agent, with confirmation</td></tr>
+          <tr class="write"><td><code>/bantay &lt;request&gt;</code></td><td>Runs the <code>suki-command-center</code> skill. Writes still need an explicit yes.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>

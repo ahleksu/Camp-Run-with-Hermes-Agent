@@ -30,6 +30,7 @@ An admin view across all 12 branches: delivery on-time rate, open/urgent tickets
 | 1 · MCP | `mcp-server/server.py` | 7 read tools, plus `escalate_ticket` and `draft_review_reply` (logged to `ops_actions`) |
 | 2 · Skill | `skills/suki-command-center/` | Scorecard, then drill-downs, then at most 3 confirmed actions |
 | 3 · Plugin | `desktop-plugin/suki-command-center/` | Pane with scorecard and drill-down, backed by `dashboard/plugin_api.py` |
+| 4 · Telegram | `scripts/bantay.py` | `/brief /tickets /reviews /stockouts /expiring /suppliers /actions` run with no model turn; `/bantay <request>` goes through the skill |
 
 ```bash
 python3 -m unittest discover -s tests   # core tests, run on a temp copy of the DB

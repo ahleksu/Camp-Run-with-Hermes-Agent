@@ -71,6 +71,10 @@ Run `hermes doctor` and `uv --version` to make sure that both work.
 
 You can also type the prompt yourself: `Use the suki-command-center skill to brief me on the branches that need attention most.`
 
+## Telegram commands (optional)
+
+With a Telegram bot connected to the Hermes gateway, run `./scripts/telegram-commands.sh`, then `hermes gateway restart`. This adds `/brief`, `/tickets`, `/reviews`, `/stockouts`, `/expiring`, `/suppliers` and `/actions`, which read the database without a model turn, and `/bantay <request>`, which goes through the skill and asks before it writes. The commands run `scripts/bantay.py`, which uses the same `suki_core.py` as the pane. They work when typed but do not appear in Telegram's `/` menu.
+
 ## Change something
 
 - You edit `suki_core.py` or `server.py`: restart Hermes.
@@ -87,6 +91,7 @@ You can also type the prompt yourself: `Use the suki-command-center skill to bri
 |---|---|
 | `hermes mcp test suki` fails | Use the absolute path to `server.py`. Run `uv run mcp-server/server.py` to see the error. |
 | The pane says "Backend unavailable" | Add `suki-command-center` to `plugins.enabled`, then restart the gateway. |
+| A Telegram command says "not found" | Run `./scripts/telegram-commands.sh`, then `hermes gateway restart`. |
 | The skill does not trigger | Start a new chat. Run `./scripts/install.sh` again if you edited the skill. |
 | Hermes warns about a skill outside `~/.hermes/skills/` | A symlink points there. Run `./scripts/install.sh`, which copies the skill. |
 | The Desktop row says "copying..." forever | The plugin folder is a symlink. Run `./scripts/install.sh` to replace it with a copy, then reload desktop plugins. |
