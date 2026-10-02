@@ -11,19 +11,19 @@ description: >-
 
 Gives the admin a ranked, evidence-backed view across all 12 branches, then helps
 them act. Vocabulary is defined in `GLOSSARY.md`. The sandbox "today" is
-**2026-09-30**; tools default to it, so never use the real date.
+**2026-09-30**. Tools default to it, so never use the real date.
 
 ## Tools (MCP server `suki`, shown as `mcp_suki_<name>`)
 
 Read:
 - `branch_scorecard` - always the first call. One row per branch.
 - `list_open_tickets`, `list_unreplied_bad_reviews`, `list_stockout_risks`, `list_expiring_stock` - drill-downs, take `branch_code`.
-- `list_supplier_slips` - explains stockouts; no branch filter.
+- `list_supplier_slips` - explains stockouts. It has no branch filter.
 - `list_recent_actions` - what has already been escalated or drafted.
 
 Write (confirm first):
 - `escalate_ticket(ticket_number, reason)`
-- `draft_review_reply(review_id, reply_text)` - saves a draft only; nothing is published.
+- `draft_review_reply(review_id, reply_text)` - saves a draft only. Nothing is published.
 
 ## Procedure
 
@@ -65,11 +65,11 @@ The chat column is narrow, so do not use tables wider than two columns.
 ## Pitfalls
 
 - Open tickets include very old ones (months). Say "aging backlog" rather than
-  treating them as new; prefer urgent and recent first.
-- Delivery, review and absence figures are windowed (default 30 days); tickets,
+  treating them as new. Prefer urgent and recent first.
+- Delivery, review and absence figures are windowed (default 30 days). Tickets,
   stockouts and expiry are a current snapshot. State the window when quoting a number.
 - A branch with a pending or in-transit purchase order is already excluded from
-  stockout risks; do not suggest reordering those.
+  stockout risks. Do not suggest reordering those.
 - Never write reply drafts for reviews you have not read, and never claim a reply
   was "sent" or "published". Drafts are for a human to publish.
 - Do not invent causes. If the data does not show why, say so.

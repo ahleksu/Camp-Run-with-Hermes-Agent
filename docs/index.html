@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suki Command Center</title>
+<meta name="description" content="A Hermes Agent build for the CAMP / RUN hackathon. An MCP server, a skill, and a desktop pane that show a Suki Mart admin which of 12 branches needs help first, and let the agent act with approval.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* === TOKENS === */
+:root {
+  --paper: #f6f1e8;
+  --paper-2: #efe7da;
+  --ink: #1b1712;
+  --ink-2: #5a5148;
+  --ink-3: #7d7368;
+  --rule: #ddd3c4;
+  --signal: #b8382a;
+  --signal-soft: #f2d9d2;
+  --hermes: #c46f26;
+  --code-bg: #ebe2d3;
+  --display: "Bricolage Grotesque", Georgia, serif;
+  --body: "Atkinson Hyperlegible Next", "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #171411; --paper-2: #201c18; --ink: #efe8de; --ink-2: #bdb3a7; --ink-3: #91877c;
+    --rule: #39322b; --signal: #ec6a55; --signal-soft: #3a1f1a; --hermes: #e08a3e; --code-bg: #262119;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #171411; --paper-2: #201c18; --ink: #efe8de; --ink-2: #bdb3a7; --ink-3: #91877c;
+  --rule: #39322b; --signal: #ec6a55; --signal-soft: #3a1f1a; --hermes: #e08a3e; --code-bg: #262119;
+  color-scheme: dark;
+}
+
+/* === BASE === */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 18px/1.6 var(--body); font-variant-numeric: tabular-nums; }
+::selection { background: var(--signal); color: var(--paper); }
+a { color: inherit; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--hermes); outline-offset: 3px; border-radius: 2px; }
+img { display: block; max-width: 100%; height: auto; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 3px; }
+pre { margin: 0; overflow-x: auto; background: var(--code-bg); padding: 18px 20px; border-radius: 6px; font: 14px/1.7 var(--mono); }
+pre code { background: none; padding: 0; font-size: inherit; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(32px, 4.4vw, 52px); }
+h3 { font-size: 22px; letter-spacing: -0.015em; line-height: 1.2; }
+p { margin: 0; max-width: 68ch; }
+.wrap { width: min(1160px, 100% - 32px); margin-inline: auto; }
+
+/* === TOP BAR === */
+.top { border-bottom: 1px solid var(--rule); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; }
+.brand { font: 700 17px/1 var(--display); letter-spacing: -0.01em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--signal); flex-shrink: 0; }
+.top nav { display: flex; gap: 22px; font-size: 15px; }
+.top nav a { text-decoration: none; color: var(--ink-2); }
+.top nav a:hover { color: var(--ink); }
+
+/* === HERO === */
+.hero { padding: 72px 0 56px; }
+.hero-line { font: 800 clamp(44px, 8vw, 104px)/0.96 var(--display); letter-spacing: -0.035em; max-width: 13ch; }
+.hero-line .b { position: relative; white-space: nowrap; }
+.hero-line .b::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0.04em; height: 0.09em; background: var(--signal); transform-origin: left; animation: sweep 900ms cubic-bezier(.16,1,.3,1) both; }
+.hero-line .b:nth-of-type(2)::after { animation-delay: 140ms; }
+.hero-line .b:nth-of-type(3)::after { animation-delay: 280ms; }
+@keyframes sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.hero-sub { margin-top: 28px; font-size: 21px; line-height: 1.5; color: var(--ink-2); max-width: 58ch; }
+.hero-sub strong { color: var(--ink); font-weight: 700; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 4px; font: 500 16px/1 var(--body); text-decoration: none; border: 1px solid var(--ink); }
+.btn-primary { background: var(--hermes); border-color: var(--hermes); color: #fff; }
+.btn-primary:hover { background: color-mix(in srgb, var(--hermes) 88%, #000); }
+.btn:hover { text-decoration: none; }
+.btn-ghost:hover { background: var(--paper-2); }
+
+/* === SCORECARD EXCERPT === */
+.ledger { margin-top: 56px; border-top: 2px solid var(--ink); }
+.ledger table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.ledger th { font: 500 13px/1.2 var(--body); color: var(--ink-3); text-align: right; padding: 12px 8px; border-bottom: 1px solid var(--rule); }
+.ledger th:first-child, .ledger td:first-child { text-align: left; padding-left: 0; }
+.ledger td { text-align: right; padding: 13px 8px; border-bottom: 1px solid var(--rule); color: var(--ink-2); }
+.ledger td:first-child { color: var(--ink); white-space: nowrap; }
+.ledger .code { font-weight: 700; letter-spacing: 0.02em; margin-right: 10px; }
+.ledger .name { color: var(--ink-3); }
+.ledger .w { color: var(--signal); font-weight: 700; }
+.ledger .dot { display: inline-block; margin-right: 12px; vertical-align: 1px; }
+.ledger .nodot { display: inline-block; width: 9px; margin-right: 12px; }
+.ledger caption { caption-side: bottom; text-align: left; padding-top: 14px; font-size: 14px; color: var(--ink-3); }
+.ledger-scroll { overflow-x: auto; }
+
+/* === SECTIONS === */
+section.block { padding: 96px 0; border-top: 1px solid var(--rule); }
+.head { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: end; margin-bottom: 48px; }
+.head p { color: var(--ink-2); font-size: 19px; }
+.lede { font-size: 20px; color: var(--ink-2); max-width: 60ch; margin-top: 18px; }
+
+/* Problem facts */
+.facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.fact { padding: 24px 24px 8px 0; }
+.fact + .fact { padding-left: 24px; border-left: 1px solid var(--rule); }
+.fact b { display: block; font: 800 clamp(40px, 5vw, 64px)/1 var(--display); letter-spacing: -0.03em; }
+.fact span { display: block; margin-top: 10px; color: var(--ink-2); font-size: 16px; line-height: 1.45; }
+.fact.sig b { color: var(--signal); }
+
+/* Screenshot frame */
+.shot { margin-top: 56px; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgb(27 23 18 / 0.08), 0 18px 48px -12px rgb(27 23 18 / 0.28); }
+.shot-cap { margin-top: 14px; font-size: 15px; color: var(--ink-3); }
+
+/* Architecture */
+.arch { display: grid; grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr) 56px minmax(0, 0.8fr); align-items: center; row-gap: 20px; }
+.node { border: 1px solid var(--rule); background: var(--paper-2); border-radius: 8px; padding: 18px 20px; }
+.node small { display: block; font-size: 13px; color: var(--ink-3); margin-bottom: 4px; }
+.node strong { display: block; font: 700 19px/1.25 var(--display); letter-spacing: -0.01em; }
+.node code { background: none; padding: 0; color: var(--ink-2); }
+.node.core { grid-row: 1 / span 2; grid-column: 5; align-self: stretch; display: flex; flex-direction: column; justify-content: center; background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.node.core small, .node.core code { color: color-mix(in srgb, var(--paper) 70%, transparent); }
+.arrow { height: 2px; background: var(--ink-3); position: relative; margin: 0 6px; }
+.arrow::after { content: ""; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left: 7px solid var(--ink-3); border-right: 0; }
+.arrow-label { grid-column: 1 / -1; }
+.arch-note { margin-top: 28px; color: var(--ink-2); max-width: 70ch; }
+
+/* Layers */
+.layer { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px; padding: 56px 0; border-top: 1px solid var(--rule); }
+.layer:first-of-type { border-top: 0; padding-top: 0; }
+.layer-tag { font: 500 14px/1 var(--body); color: var(--ink-3); margin-bottom: 14px; }
+.layer h3 { font-size: 34px; letter-spacing: -0.025em; line-height: 1.05; }
+.layer .intro p + p { margin-top: 14px; }
+.layer .intro p { color: var(--ink-2); margin-top: 16px; }
+.tools { width: 100%; border-collapse: collapse; font-size: 16px; }
+.tools td { padding: 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.tools td:first-child { width: 42%; padding-right: 18px; }
+.tools td:first-child code { background: none; padding: 0; font-weight: 600; color: var(--ink); }
+.tools td:last-child { color: var(--ink-2); }
+.tools tr.write td:first-child code { color: var(--signal); }
+.tools .group td { padding-top: 26px; font: 500 13px/1 var(--body); color: var(--ink-3); border-bottom-color: var(--ink); }
+ol.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; }
+ol.steps li { counter-increment: s; display: grid; grid-template-columns: 40px minmax(0, 1fr); padding: 13px 0; border-bottom: 1px solid var(--rule); color: var(--ink-2); }
+ol.steps li::before { content: counter(s); font: 700 18px/1.4 var(--display); color: var(--ink); }
+ol.steps li b { color: var(--ink); }
+.plain { margin: 0; padding-left: 20px; color: var(--ink-2); }
+.plain li + li { margin-top: 8px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.pane-img { border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgb(27 23 18 / 0.08), 0 14px 36px -12px rgb(27 23 18 / 0.25); }
+
+/* Loop */
+.loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 2px solid var(--ink); counter-reset: l; }
+.loop li { list-style: none; padding: 20px 20px 0 0; counter-increment: l; }
+.loop li + li { padding-left: 20px; border-left: 1px solid var(--rule); }
+.loop li::before { content: counter(l); display: block; font: 800 40px/1 var(--display); color: var(--signal); margin-bottom: 14px; }
+.loop b { display: block; font: 700 18px/1.25 var(--display); }
+.loop span { display: block; margin-top: 8px; color: var(--ink-2); font-size: 15.5px; line-height: 1.5; }
+.loop-proof { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 48px; margin-top: 64px; align-items: center; }
+.loop-proof p { color: var(--ink-2); }
+.loop-proof p + p { margin-top: 14px; }
+
+/* Decisions */
+.decisions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); }
+.decision { padding: 24px 28px 0 0; }
+.decision + .decision { padding-left: 28px; border-left: 1px solid var(--rule); }
+.decision small { display: block; color: var(--ink-3); font-size: 13px; margin-bottom: 10px; }
+.decision p { margin-top: 12px; color: var(--ink-2); font-size: 16.5px; }
+
+/* Run it */
+.run { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; }
+.run p { color: var(--ink-2); }
+.run p + p { margin-top: 14px; }
+
+/* Rubric */
+.rubric { width: 100%; border-collapse: collapse; font-size: 16px; border-top: 2px solid var(--ink); }
+.rubric th { text-align: left; font: 500 13px/1.2 var(--body); color: var(--ink-3); padding: 14px 16px 14px 0; border-bottom: 1px solid var(--rule); }
+.rubric td { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-2); }
+.rubric td:first-child { color: var(--ink); font-weight: 700; white-space: nowrap; }
+.rubric td:nth-child(2) { font: 700 18px/1.3 var(--display); color: var(--ink); text-align: right; padding-right: 28px; }
+
+/* Footer */
+footer { border-top: 1px solid var(--rule); padding: 40px 0 56px; color: var(--ink-3); font-size: 15px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+
+/* === RESPONSIVE === */
+@media (max-width: 900px) {
+  .head, .layer, .pair, .loop-proof, .run { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fact:nth-child(3) { padding-left: 0; border-left: 0; }
+  .loop { grid-template-columns: minmax(0, 1fr); }
+  .loop li, .loop li + li { padding: 18px 0; border-left: 0; border-bottom: 1px solid var(--rule); }
+  .decisions { grid-template-columns: minmax(0, 1fr); }
+  .decision, .decision + .decision { padding: 22px 0; border-left: 0; border-bottom: 1px solid var(--rule); }
+  .arch { grid-template-columns: minmax(0, 1fr); }
+  .arch .arrow { display: none; }
+  .node.core { grid-row: auto; grid-column: auto; }
+  section.block { padding: 72px 0; }
+  .top nav { display: none; }
+}
+@media (max-width: 560px) {
+  body { font-size: 17px; }
+  .facts { grid-template-columns: minmax(0, 1fr); }
+  .fact, .fact + .fact { padding: 20px 0; border-left: 0; border-bottom: 1px solid var(--rule); }
+  .ledger .name { display: none; }
+  .rubric td:nth-child(3) { min-width: 220px; }
+  .hero { padding-top: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero-line .b::after { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- === TOP BAR === -->
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><span class="dot" aria-hidden="true"></span>Suki Command Center</a>
+    <nav aria-label="Sections">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#layers">Layers</a>
+      <a href="#run">Run it</a>
+      <a href="deck/">Slides</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- === HERO === -->
+<section class="hero">
+  <div class="wrap">
+    <h1 class="hero-line"><span class="b">Katipunan</span>, <span class="b">Cubao</span> and <span class="b">Alabang</span> need help first.</h1>
+    <p class="hero-sub">Suki Command Center answers the first question a Suki Mart admin asks each morning: <strong>which of our 12 branches needs help, and why?</strong> It is a Hermes Agent build with three parts. An MCP server reads the sandbox data, a skill tells the agent how to rank and act, and a desktop pane shows the result. The agent can escalate a ticket or save a reply draft, but only after the admin says yes.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="deck/">Open the slides</a>
+      <a class="btn btn-ghost" href="https://github.com/ahleksu/Camp-Run-with-Hermes-Agent">Source on GitHub</a>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-scroll">
+      <table>
+        <caption>The top five rows of the scorecard at the sandbox date, 2026-09-30. Red marks the 3 worst branches on each measure. A dot marks the 3 branches with the highest combined rank.</caption>
+        <thead><tr><th scope="col">Branch</th><th scope="col">On-time</th><th scope="col">Bad reviews</th><th scope="col">Urgent</th><th scope="col">Stockout</th><th scope="col">Absent</th></tr></thead>
+        <tbody>
+          <tr><td><span class="dot" aria-label="Needs help first"></span><span class="code">KAT</span><span class="name">Katipunan</span></td><td>65.8%</td><td>4</td><td class="w">5</td><td class="w">15</td><td class="w">7.2%</td></tr>
+          <tr><td><span class="dot" aria-label="Needs help first"></span><span class="code">CUB</span><span class="name">Cubao</span></td><td class="w">63.9%</td><td class="w">13</td><td class="w">3</td><td>1</td><td>4.4%</td></tr>
+          <tr><td><span class="dot" aria-label="Needs help first"></span><span class="code">ALB</span><span class="name">Alabang</span></td><td>66.3%</td><td>7</td><td class="w">3</td><td class="w">15</td><td>4.3%</td></tr>
+          <tr><td><span class="nodot"></span><span class="code">ORT</span><span class="name">Ortigas Center</span></td><td class="w">62.6%</td><td class="w">9</td><td>2</td><td>14</td><td>3.1%</td></tr>
+          <tr><td><span class="nodot"></span><span class="code">TMR</span><span class="name">Tomas Morato</span></td><td class="w">52.7%</td><td>4</td><td>1</td><td>0</td><td>2.6%</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- === PROBLEM === -->
+<section class="block" id="problem">
+  <div class="wrap">
+    <div class="head">
+      <h2>The answer is spread over five tables.</h2>
+      <p>Suki Mart is a fictional grocery chain with 12 branches in Metro Manila. Its sandbox has about 230,000 rows of operations data, and the problems in it are real enough to cost a branch its customers. A head of operations who wants to know where to send help must join deliveries, tickets, reviews, stock, and shifts by hand.</p>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>264</b><span>open support tickets, and 23 of them are urgent. Some are more than 100 days old.</span></div>
+      <div class="fact sig"><b>76</b><span>1 or 2 star reviews in the last 30 days that nobody answered.</span></div>
+      <div class="fact"><b>67</b><span>products with 2 days of stock or less and no purchase order on the way.</span></div>
+      <div class="fact sig"><b>+6.3d</b><span>Visayas Canning Corp. promises 5 days and delivers in 11.3. Its items run out first.</span></div>
+    </div>
+    <figure style="margin:0">
+      <div class="shot"><img src="assets/full.webp" width="2000" height="1200" alt="Hermes Desktop with a chat on the left and the Command Center pane on the right. The chat lists proposed actions. The pane shows the branch scorecard with the worst values in red."></div>
+      <figcaption class="shot-cap">Hermes Desktop during a live run. The agent wrote the briefing on the left. The pane on the right reads the same numbers without a model turn.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- === HOW IT WORKS === -->
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="head">
+      <h2>One query core, two doors.</h2>
+      <p>Every number comes from one Python module, <code>suki_core.py</code>. The agent reaches it through MCP tools. The pane reaches it through a small REST backend. Both doors give the same answer, so the chat and the pane cannot disagree about the on-time rate.</p>
+    </div>
+    <div class="arch" role="img" aria-label="Diagram. The desktop pane calls plugin_api.py, and the chat calls the skill and MCP server. Both paths reach suki_core.py and store.db.">
+      <div class="node"><small>Door 1, no model needed</small><strong>Desktop pane</strong><code>desktop/plugin.js</code></div>
+      <div class="arrow" aria-hidden="true"></div>
+      <div class="node"><small>REST routes</small><strong>Plugin backend</strong><code>dashboard/plugin_api.py</code></div>
+      <div class="arrow" aria-hidden="true"></div>
+      <div class="node core"><small>Shared query core</small><strong>suki_core.py</strong><code>data/store.db</code></div>
+      <div class="node"><small>Door 2, the agent</small><strong>Chat and skill</strong><code>SKILL.md</code></div>
+      <div class="arrow" aria-hidden="true"></div>
+      <div class="node"><small>11 tools over stdio</small><strong>MCP server</strong><code>mcp-server/server.py</code></div>
+      <div class="arrow" aria-hidden="true"></div>
+    </div>
+    <p class="arch-note">The pane also sends prompts into the chat. A click on Escalate or Draft reply hands the work to the agent, and the agent asks the admin before it writes. When the chat turn ends, the pane reloads its data, so the change shows up in both places.</p>
+  </div>
+</section>
+
+<!-- === LAYERS === -->
+<section class="block" id="layers">
+  <div class="wrap">
+    <div class="head">
+      <h2>What we built in each layer.</h2>
+      <p>The hackathon asks for three layers that connect. Each one below names the files and what they do.</p>
+    </div>
+
+    <div class="layer">
+      <div class="intro">
+        <div class="layer-tag">Layer 1 · MCP server</div>
+        <h3>Tools that each answer one business question.</h3>
+        <p>The server exposes 9 read tools and 2 write tools. No tool accepts raw SQL. Each docstring tells the agent when to call it and what the numbers mean.</p>
+        <p>The two writes are narrow on purpose. Each one adds a row to an <code>ops_actions</code> log, and no tool can publish a reply or change any other table. 11 tests run against a temporary copy of the database.</p>
+      </div>
+      <table class="tools">
+        <tbody>
+          <tr class="group"><td colspan="2">Read</td></tr>
+          <tr><td><code>branch_scorecard</code></td><td>One row per branch with on-time rate, failed deliveries, open and urgent tickets, unreplied bad reviews, stockout risks, expiring items, and absence.</td></tr>
+          <tr><td><code>list_open_tickets</code></td><td>Open or pending tickets, urgent first, then oldest first.</td></tr>
+          <tr><td><code>list_unreplied_bad_reviews</code></td><td>1 or 2 star reviews with no reply, with the review text.</td></tr>
+          <tr><td><code>list_stockout_risks</code></td><td>Products with 2 days of cover or less and no order pending or in transit.</td></tr>
+          <tr><td><code>list_expiring_stock</code></td><td>Stock that expires within 3 days, largest cost at risk first.</td></tr>
+          <tr><td><code>list_supplier_slips</code></td><td>Suppliers ranked by how far real lead time runs past the promise.</td></tr>
+          <tr><td><code>list_recent_actions</code></td><td>What the agent already escalated or drafted, so it does not repeat itself.</td></tr>
+          <tr><td><code>describe_sandbox</code>, <code>list_branches</code></td><td>Orientation for the agent: tables, row counts, and branch codes.</td></tr>
+          <tr class="group"><td colspan="2">Write, after the admin says yes</td></tr>
+          <tr class="write"><td><code>escalate_ticket</code></td><td>Raises an open ticket to urgent and logs the reason. Running it twice changes nothing.</td></tr>
+          <tr class="write"><td><code>draft_review_reply</code></td><td>Saves reply text as a draft for a person to publish. It never publishes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="layer">
+      <div class="intro">
+        <div class="layer-tag">Layer 2 · Skill</div>
+        <h3>A fixed procedure, so the briefing is the same every morning.</h3>
+        <p>The skill triggers on plain requests such as "how are the branches doing" or "what needs attention". It ranks branches the same way the pane does: each branch gets points for its rank on five measures, and the points are summed.</p>
+        <p>Pane buttons send narrow requests, for example "escalate ticket TKT-01393". The skill skips the scorecard for these, reads the one row, and asks before it writes.</p>
+      </div>
+      <ol class="steps">
+        <li><span><b>Score.</b> Call <code>branch_scorecard</code> first, every time.</span></li>
+        <li><span><b>Pick three.</b> Choose at most 3 branches by combined rank. Skip on-time rate for branches without delivery.</span></li>
+        <li><span><b>Drill down.</b> Call only the lists that explain why a branch was picked.</span></li>
+        <li><span><b>Check history.</b> Read <code>list_recent_actions</code> so the agent does not escalate the same ticket twice.</span></li>
+        <li><span><b>Propose.</b> Offer at most 3 actions, each tied to a row it read, and ask "Go ahead?".</span></li>
+        <li><span><b>Act and report.</b> Call a write tool only after an explicit yes, then report what changed.</span></li>
+      </ol>
+    </div>
+
+    <div class="layer">
+      <div class="intro">
+        <div class="layer-tag">Layer 3 · Desktop plugin</div>
+        <h3>A pane that reads like part of Hermes.</h3>
+        <p>The pane uses Hermes theme variables and its own components, so it follows the app in light and dark mode. It reads from its own backend, so it renders without a model call.</p>
+        <ul class="plain">
+          <li>A headline sentence names the 3 branches to help first and the numbers behind the first one.</li>
+          <li>The table sorts by any column. Red marks the 3 worst branches on each measure.</li>
+          <li>A click opens a branch inline with its tickets, reviews, stockouts, and expiring stock.</li>
+          <li>Escalate and Draft reply buttons hand the action to the agent.</li>
+          <li>"Recorded by Hermes" lists every write the agent made.</li>
+        </ul>
+      </div>
+      <div class="pane-img"><img src="assets/pane.webp" width="1040" height="1205" alt="The Command Center pane. A headline names Katipunan, Cubao and Alabang. Four totals sit above a 12-row table, followed by recorded actions and supplier slips."></div>
+    </div>
+  </div>
+</section>
+
+<!-- === END TO END === -->
+<section class="block" id="loop">
+  <div class="wrap">
+    <div class="head">
+      <h2>From a click to a changed record.</h2>
+      <p>The full loop runs on a laptop with no cloud database. Every step uses real sandbox data.</p>
+    </div>
+    <ol class="loop">
+      <li><b>Click</b><span>The admin clicks "Brief me" or Escalate in the pane.</span></li>
+      <li><b>Prompt</b><span>The pane sends a request into the active Hermes chat.</span></li>
+      <li><b>Skill</b><span>Hermes loads the skill and calls the MCP tools in order.</span></li>
+      <li><b>Approve</b><span>The agent shows the exact ticket or reply text and waits for yes.</span></li>
+      <li><b>Refresh</b><span>The write lands in <code>ops_actions</code>, and the pane shows it when the turn ends.</span></li>
+    </ol>
+    <div class="loop-proof">
+      <div class="pane-img"><img src="assets/actions.webp" width="630" height="300" alt="Three proposed actions from the agent. Escalate TKT-01393, escalate TKT-00585, and draft a reply to review 2538. Each ends with Go ahead?"></div>
+      <div>
+        <p>This is the agent's own output from the run in the screenshot. Each action cites a ticket or review it read, with the number that justifies it.</p>
+        <p>Nothing is written yet at this point. The admin answers yes or no for each action.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- === DECISIONS === -->
+<section class="block" id="decisions">
+  <div class="wrap">
+    <div class="head">
+      <h2>Three decisions we made on purpose.</h2>
+      <p>Each one has a short record in <a href="https://github.com/ahleksu/Camp-Run-with-Hermes-Agent/tree/main/docs/adr">docs/adr</a> or <a href="https://github.com/ahleksu/Camp-Run-with-Hermes-Agent/blob/main/GLOSSARY.md">GLOSSARY.md</a>.</p>
+    </div>
+    <div class="decisions">
+      <div class="decision"><small>ADR 0001</small><h3>The pane does not go through the chat to read data.</h3><p>A pane must render at once. A model turn takes seconds and costs tokens. A second copy of the SQL would drift, so both doors share one module.</p></div>
+      <div class="decision"><small>ADR 0002</small><h3>Writes are narrow and logged.</h3><p>The agent can escalate a ticket or save a draft. It cannot publish, delete, or edit any other table. The admin and the judges can see exactly what it is able to touch.</p></div>
+      <div class="decision"><small>Glossary</small><h3>Every measure has one definition.</h3><p>"Stockout risk" means 2 days of cover or less with no order coming. "Unreplied bad review" means 1 or 2 stars with no reply. The agent, the pane, and the tests use the same words.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- === RUN IT === -->
+<section class="block" id="run">
+  <div class="wrap">
+    <div class="run">
+      <div>
+        <h2>Run it on your laptop.</h2>
+        <p class="lede">You need Hermes Agent and Hermes Desktop, <code>uv</code>, and Python 3.10 or newer. The full guide is in <a href="https://github.com/ahleksu/Camp-Run-with-Hermes-Agent/blob/main/docs/SETUP.md">docs/SETUP.md</a>.</p>
+        <p style="margin-top:14px">After the restart, open Capabilities, then Plugins, and turn on the Desktop row of suki-command-center. Run <code>python data/seed.py</code> to reset the data before a demo.</p>
+      </div>
+<pre><code># 1. Tests run on a temporary copy of the database
+python3 -m unittest discover -s tests
+
+# 2. Copy the skill and plugin into ~/.hermes
+./scripts/install.sh
+
+# 3. Register the MCP server with an absolute path
+hermes mcp add suki --command uv \
+  --args run "$(pwd)/mcp-server/server.py"
+
+# 4. Add suki-command-center to plugins.enabled
+#    in ~/.hermes/config.yaml, then restart Hermes
+hermes mcp test suki   # Tools discovered: 11</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- === RUBRIC === -->
+<section class="block" id="rubric">
+  <div class="wrap">
+    <div class="head">
+      <h2>Where each judging criterion shows up.</h2>
+      <p>The CAMP / RUN rubric has seven criteria and 100 points. This table points to the evidence for each one.</p>
+    </div>
+    <div class="ledger-scroll">
+    <table class="rubric">
+      <thead><tr><th scope="col">Criterion</th><th scope="col" style="text-align:right;padding-right:28px">Points</th><th scope="col">Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>MCP server</td><td>20</td><td>11 domain tools with no SQL passthrough, 2 logged writes, and 11 tests.</td></tr>
+        <tr><td>Skill</td><td>20</td><td>A six-step procedure, the same ranking as the pane, a single-action path, and written pitfalls.</td></tr>
+        <tr><td>Desktop plugin</td><td>20</td><td>Native components and theme variables, sortable table, inline drill-down, loading and error states.</td></tr>
+        <tr><td>Integration</td><td>10</td><td>Pane click, then skill, then MCP write, then the pane refreshes on its own.</td></tr>
+        <tr><td>Relevance</td><td>15</td><td>Built on the problems planted in the data: unanswered reviews, stockouts, a late supplier, an aging backlog.</td></tr>
+        <tr><td>Uniqueness</td><td>10</td><td>One core behind two doors, and a ranking the admin can read and check.</td></tr>
+        <tr><td>Demo and pitch</td><td>5</td><td>A five-step script in <a href="https://github.com/ahleksu/Camp-Run-with-Hermes-Agent/blob/main/docs/DEMO.md">docs/DEMO.md</a> and the <a href="deck/">slides</a>.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Built for CAMP / RUN, October 2, 2026, on <a href="https://hermes-agent.nousresearch.com">Hermes Agent</a> by Nous Research.</span>
+    <span>Suki Mart and every record in it are fictional. MIT license.</span>
+  </div>
+</footer>
+</body>
+</html>

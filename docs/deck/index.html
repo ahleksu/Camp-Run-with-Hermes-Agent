@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suki Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ===========================================
+   THEME TOKENS
+   Same palette and type as the submission site (../index.html).
+   Change a color here to change it on every slide.
+   =========================================== */
+:root {
+    --stage-bg: #0f0d0b;          /* letterbox around the 16:9 stage */
+    --slide-bg: #f6f1e8;          /* warm paper */
+    --paper-2: #ece3d4;
+    --ink: #1b1712;
+    --ink-2: #5a5148;
+    --ink-3: #85796c;
+    --rule: #d9cebd;
+    --signal: #b8382a;            /* the pane's "worst" red */
+    --hermes: #c46f26;            /* Hermes orange, used for the call to action only */
+    --font-display: "Bricolage Grotesque", Georgia, serif;
+    --font-body: "Atkinson Hyperlegible Next", "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --pad-x: 128px;
+    --pad-y: 104px;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   (viewport-base.css from frontend-slides, included in full)
+   =========================================== */
+html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position: fixed; inset: 0; overflow: hidden; background: var(--stage-bg, #000); }
+.deck-stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--slide-bg, #fff); }
+.slide { position: absolute; inset: 0; width: 1920px; height: 1080px; overflow: hidden; display: block; visibility: hidden; opacity: 0; pointer-events: none; background: var(--slide-bg, #fff); }
+.slide.active, .slide.visible { visibility: visible; opacity: 1; pointer-events: auto; z-index: 1; }
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   SLIDE TYPOGRAPHY AND FRAME
+   All sizes are authored for the 1920×1080 stage.
+   =========================================== */
+.slide { color: var(--ink); font: 400 34px/1.45 var(--font-body); font-variant-numeric: tabular-nums; }
+.frame { position: absolute; inset: var(--pad-y) var(--pad-x); display: flex; flex-direction: column; }
+.chrome { position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 48px; display: flex; justify-content: space-between; font: 500 20px/1 var(--font-body); color: var(--ink-3); }
+.chrome .mark { display: flex; align-items: center; gap: 12px; }
+.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--signal); flex-shrink: 0; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.03em; line-height: 1.0; text-wrap: balance; }
+h2 { font-size: 96px; max-width: 1400px; }
+h3 { font-size: 40px; letter-spacing: -0.02em; line-height: 1.15; }
+.kicker-free { margin-top: 36px; font-size: 38px; line-height: 1.4; color: var(--ink-2); max-width: 1300px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
+.red { color: var(--signal); }
+
+/* ===========================================
+   ANIMATION
+   One reveal per slide: content rises 24px and fades in, staggered.
+   =========================================== */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease-out-expo), transform 0.7s var(--ease-out-expo); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.slide.visible .reveal:nth-child(2) { transition-delay: 0.08s; }
+.slide.visible .reveal:nth-child(3) { transition-delay: 0.16s; }
+.slide.visible .reveal:nth-child(4) { transition-delay: 0.24s; }
+.slide.visible .reveal:nth-child(5) { transition-delay: 0.32s; }
+.slide.visible .reveal:nth-child(6) { transition-delay: 0.40s; }
+
+/* Underline sweep under branch names (title and answer slides) */
+.sweep { position: relative; white-space: nowrap; }
+.sweep::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0.03em; height: 0.085em; background: var(--signal); transform: scaleX(0); transform-origin: left; transition: transform 0.9s var(--ease-out-expo) 0.35s; }
+.slide.visible .sweep::after { transform: scaleX(1); }
+.slide.visible .sweep:nth-of-type(2)::after { transition-delay: 0.5s; }
+.slide.visible .sweep:nth-of-type(3)::after { transition-delay: 0.65s; }
+
+/* ===========================================
+   SLIDE 1: TITLE
+   =========================================== */
+.title .frame { justify-content: center; }
+.title h1 { font-size: 168px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.92; max-width: 1500px; }
+.title .sub { margin-top: 56px; display: flex; gap: 40px; font-size: 32px; color: var(--ink-2); }
+.title .sub span + span { padding-left: 40px; border-left: 2px solid var(--rule); }
+
+/* ===========================================
+   SLIDE 2: PROBLEM NUMBERS
+   =========================================== */
+.facts { margin-top: auto; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 4px solid var(--ink); }
+.fact { padding: 40px 40px 0 0; }
+.fact + .fact { padding-left: 40px; border-left: 2px solid var(--rule); }
+.fact b { display: block; font: 800 128px/1 var(--font-display); letter-spacing: -0.04em; }
+.fact span { display: block; margin-top: 20px; font-size: 28px; line-height: 1.4; color: var(--ink-2); }
+.fact.sig b { color: var(--signal); }
+
+/* ===========================================
+   SLIDE 3: THE ANSWER + LEDGER
+   =========================================== */
+.answer h2 { font-size: 112px; font-weight: 800; max-width: 1600px; letter-spacing: -0.035em; }
+.ledger { margin-top: auto; width: 100%; border-collapse: collapse; border-top: 4px solid var(--ink); font-size: 32px; }
+.ledger th { font: 500 22px/1 var(--font-body); color: var(--ink-3); text-align: right; padding: 22px 16px; border-bottom: 2px solid var(--rule); }
+.ledger td { text-align: right; padding: 20px 16px; border-bottom: 2px solid var(--rule); color: var(--ink-2); }
+.ledger th:first-child, .ledger td:first-child { text-align: left; padding-left: 0; }
+.ledger td:first-child { color: var(--ink); }
+.ledger .code { font-weight: 700; letter-spacing: 0.02em; margin: 0 18px 0 22px; }
+.ledger .name { color: var(--ink-3); }
+.ledger .w { color: var(--signal); font-weight: 700; }
+.ledger .nodot { display: inline-block; width: 14px; }
+
+/* ===========================================
+   SLIDE 4: ARCHITECTURE
+   =========================================== */
+.arch { margin-top: auto; display: grid; grid-template-columns: 1fr 96px 1fr 96px 0.85fr; row-gap: 36px; align-items: center; }
+.node { border: 2px solid var(--rule); background: var(--paper-2); border-radius: 14px; padding: 30px 34px; }
+.node small { display: block; font-size: 22px; color: var(--ink-3); margin-bottom: 8px; }
+.node strong { display: block; font: 700 40px/1.15 var(--font-display); letter-spacing: -0.02em; }
+.node code { display: block; margin-top: 8px; font-size: 22px; color: var(--ink-2); }
+.node.core { grid-column: 5; grid-row: 1 / span 2; align-self: stretch; display: flex; flex-direction: column; justify-content: center; background: var(--ink); border-color: var(--ink); color: var(--slide-bg); }
+.node.core small, .node.core code { color: rgb(246 241 232 / 0.7); }
+.arrow { height: 3px; background: var(--ink-3); position: relative; margin: 0 12px; }
+.arrow::after { content: ""; position: absolute; right: -2px; top: -8px; border: 9px solid transparent; border-left: 13px solid var(--ink-3); border-right: 0; }
+
+/* ===========================================
+   SLIDES 5-6: LAYER DETAIL (two columns)
+   =========================================== */
+.split { display: grid; grid-template-columns: 640px 1fr; gap: 104px; height: 100%; }
+.split .left { display: flex; flex-direction: column; }
+.tag { font: 500 24px/1 var(--font-body); color: var(--ink-3); margin-bottom: 28px; }
+.split h2 { font-size: 80px; }
+.split .left p { margin-top: 32px; font-size: 32px; color: var(--ink-2); }
+.list { list-style: none; border-top: 4px solid var(--ink); align-self: center; width: 100%; }
+.list li { display: grid; grid-template-columns: 520px 1fr; gap: 32px; padding: 20px 0; border-bottom: 2px solid var(--rule); font-size: 27px; color: var(--ink-2); line-height: 1.35; }
+.list li code { font-size: 27px; font-weight: 600; color: var(--ink); }
+.list li.write code { color: var(--signal); }
+.list .group { display: block; padding: 22px 0 14px; font: 500 22px/1 var(--font-body); color: var(--ink-3); border-bottom-color: var(--ink); }
+.steps { list-style: none; counter-reset: s; border-top: 4px solid var(--ink); align-self: center; width: 100%; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 80px 1fr; padding: 24px 0; border-bottom: 2px solid var(--rule); font-size: 32px; color: var(--ink-2); line-height: 1.35; }
+.steps li::before { content: counter(s); font: 800 40px/1.1 var(--font-display); color: var(--ink); }
+.steps li b { color: var(--ink); }
+
+/* ===========================================
+   SLIDE 7 AND 9: SCREENSHOT SLIDES
+   =========================================== */
+.shot { border-radius: 16px; overflow: hidden; box-shadow: 0 2px 4px rgb(27 23 18 / 0.08), 0 36px 80px -24px rgb(27 23 18 / 0.4); }
+.pane-split { display: grid; grid-template-columns: 1fr 1000px; gap: 80px; height: 100%; align-items: center; }
+.pane-split .shot { height: 872px; }
+.pane-split .shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.pane-split ul { list-style: none; margin-top: 44px; border-top: 4px solid var(--ink); }
+.pane-split li { padding: 18px 0; border-bottom: 2px solid var(--rule); font-size: 28px; color: var(--ink-2); line-height: 1.35; }
+.proof { display: grid; grid-template-columns: 1fr 1fr; gap: 96px; align-items: center; margin-top: auto; margin-bottom: auto; }
+.proof .shot img { display: block; width: 100%; }
+.proof p { font-size: 36px; color: var(--ink-2); line-height: 1.45; }
+.proof p + p { margin-top: 28px; }
+.proof p b { color: var(--ink); }
+
+/* ===========================================
+   SLIDE 8: THE LOOP
+   =========================================== */
+.loop { margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 4px solid var(--ink); list-style: none; counter-reset: l; }
+.loop li { counter-increment: l; padding: 36px 36px 0 0; }
+.loop li + li { padding-left: 36px; border-left: 2px solid var(--rule); }
+.loop li::before { content: counter(l); display: block; font: 800 96px/1 var(--font-display); color: var(--signal); margin-bottom: 28px; letter-spacing: -0.04em; }
+.loop b { display: block; font: 700 40px/1.1 var(--font-display); letter-spacing: -0.02em; }
+.loop span { display: block; margin-top: 14px; font-size: 27px; line-height: 1.4; color: var(--ink-2); }
+
+/* ===========================================
+   SLIDE 10: GUARDRAILS
+   =========================================== */
+.guards { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 4px solid var(--ink); }
+.guard { padding: 40px 48px 0 0; }
+.guard + .guard { padding-left: 48px; border-left: 2px solid var(--rule); }
+.guard p { margin-top: 20px; font-size: 29px; color: var(--ink-2); line-height: 1.4; }
+
+/* ===========================================
+   SLIDE 11: CLOSE
+   =========================================== */
+.close { background: var(--ink); color: var(--slide-bg); }
+.close .frame { justify-content: center; }
+.close h2 { font-size: 136px; font-weight: 800; letter-spacing: -0.04em; max-width: 1500px; }
+.close .links { margin-top: 72px; display: grid; grid-template-columns: auto 1fr; column-gap: 48px; row-gap: 18px; font-size: 30px; }
+.close .links span:nth-child(odd) { color: rgb(246 241 232 / 0.55); }
+.close .chrome { color: rgb(246 241 232 / 0.5); }
+
+/* ===========================================
+   DECK CHROME (outside the stage): progress bar and presenter notes
+   =========================================== */
+.progress { position: fixed; left: 0; top: 0; height: 4px; background: var(--hermes); z-index: 1001; transition: width 0.4s var(--ease-out-expo); }
+.notes-panel { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 1002; max-height: 40vh; overflow: auto; padding: 18px 22px; border-radius: 10px; background: rgb(15 13 11 / 0.92); color: #efe8de; font: 400 17px/1.55 var(--font-body); display: none; }
+.notes-panel.show { display: block; }
+.notes-panel b { color: #e08a3e; font-weight: 500; }
+aside.notes { display: none; }
+
+/* Inline editing (press E) */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle { position: fixed; top: 16px; left: 16px; z-index: 10001; padding: 8px 14px; border: 0; border-radius: 6px; background: var(--hermes); color: #fff; font: 500 15px/1 var(--font-body); opacity: 0; pointer-events: none; transition: opacity 0.3s ease; cursor: pointer; }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+[contenteditable="true"] { outline: 2px dashed var(--hermes); outline-offset: 6px; }
+</style>
+</head>
+<body>
+<div class="deck-viewport">
+<main class="deck-stage" id="deckStage" aria-live="polite">
+
+<!-- ========== 1. TITLE ========== -->
+<section class="slide title active" aria-label="Slide 1">
+  <div class="frame">
+    <h1 class="reveal">Which branch needs help first?</h1>
+    <div class="sub reveal"><span>Suki Command Center</span><span>Built on Hermes Agent</span><span>CAMP / RUN · October 2, 2026</span></div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Suki Mart · 12 branches · Metro Manila</span><span>01</span></div>
+  <aside class="notes">Open with the question an operations head asks every morning. Do not explain the stack yet. About 15 seconds.</aside>
+</section>
+
+<!-- ========== 2. PROBLEM ========== -->
+<section class="slide" aria-label="Slide 2">
+  <div class="frame">
+    <h2 class="reveal">The answer is spread over five tables.</h2>
+    <p class="kicker-free reveal">Deliveries, tickets, reviews, stock, and shifts. An admin joins them by hand, so the morning goes to finding the problem instead of fixing it.</p>
+    <div class="facts reveal">
+      <div class="fact"><b>264</b><span>open tickets, 23 urgent, some older than 100 days</span></div>
+      <div class="fact sig"><b>76</b><span>bad reviews in 30 days that nobody answered</span></div>
+      <div class="fact"><b>67</b><span>products about to run out with no order coming</span></div>
+      <div class="fact sig"><b>+6.3d</b><span>how late Visayas Canning delivers against its promise</span></div>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>The problem</span><span>02</span></div>
+  <aside class="notes">All four numbers are in the sandbox at 2026-09-30. Point at the two red ones: customers waiting on a reply, and a supplier that causes the stockouts. About 40 seconds.</aside>
+</section>
+
+<!-- ========== 3. THE ANSWER ========== -->
+<section class="slide answer" aria-label="Slide 3">
+  <div class="frame">
+    <h2 class="reveal"><span class="sweep">Katipunan</span>, <span class="sweep">Cubao</span> and <span class="sweep">Alabang</span> need help first.</h2>
+    <table class="ledger reveal">
+      <thead><tr><th>Branch</th><th>On-time</th><th>Bad reviews</th><th>Urgent</th><th>Stockout</th><th>Absent</th></tr></thead>
+      <tbody>
+        <tr><td><span class="dot"></span><span class="code">KAT</span><span class="name">Katipunan</span></td><td>65.8%</td><td>4</td><td class="w">5</td><td class="w">15</td><td class="w">7.2%</td></tr>
+        <tr><td><span class="dot"></span><span class="code">CUB</span><span class="name">Cubao</span></td><td class="w">63.9%</td><td class="w">13</td><td class="w">3</td><td>1</td><td>4.4%</td></tr>
+        <tr><td><span class="dot"></span><span class="code">ALB</span><span class="name">Alabang</span></td><td>66.3%</td><td>7</td><td class="w">3</td><td class="w">15</td><td>4.3%</td></tr>
+        <tr><td><span class="nodot"></span><span class="code">ORT</span><span class="name">Ortigas Center</span></td><td class="w">62.6%</td><td class="w">9</td><td>2</td><td>14</td><td>3.1%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Red = 3 worst per measure · dot = highest combined rank</span><span>03</span></div>
+  <aside class="notes">This sentence is what the pane and the agent both produce. The ranking is simple: rank every branch on five measures, give points for each rank, and add them. Katipunan is not the worst on any single measure, but it is near the bottom on three. About 30 seconds.</aside>
+</section>
+
+<!-- ========== 4. ARCHITECTURE ========== -->
+<section class="slide" aria-label="Slide 4">
+  <div class="frame">
+    <h2 class="reveal">One query core, two doors.</h2>
+    <p class="kicker-free reveal">The pane reads data without a model turn. The agent reads the same data through MCP. They cannot disagree.</p>
+    <div class="arch reveal">
+      <div class="node"><small>Door 1</small><strong>Desktop pane</strong><code>plugin.js</code></div>
+      <div class="arrow"></div>
+      <div class="node"><small>REST, no model</small><strong>Plugin backend</strong><code>plugin_api.py</code></div>
+      <div class="arrow"></div>
+      <div class="node core"><small>Shared</small><strong>suki_core.py</strong><code>store.db</code></div>
+      <div class="node"><small>Door 2</small><strong>Chat + skill</strong><code>SKILL.md</code></div>
+      <div class="arrow"></div>
+      <div class="node"><small>11 tools</small><strong>MCP server</strong><code>server.py</code></div>
+      <div class="arrow"></div>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>How it works</span><span>04</span></div>
+  <aside class="notes">This is ADR 0001. A second copy of the SQL would drift. A pane that waits on the model would be slow and cost tokens. About 30 seconds.</aside>
+</section>
+
+<!-- ========== 5. LAYER 1: MCP ========== -->
+<section class="slide" aria-label="Slide 5">
+  <div class="frame">
+    <div class="split">
+      <div class="left">
+        <div class="tag reveal">Layer 1 · MCP server</div>
+        <h2 class="reveal">One tool, one business question.</h2>
+        <p class="reveal">No tool takes raw SQL. Only two tools write, and each write is logged to <code>ops_actions</code>.</p>
+      </div>
+      <ul class="list reveal">
+        <li class="group">Read</li>
+        <li><code>branch_scorecard</code><span>Every branch on seven measures</span></li>
+        <li><code>list_open_tickets</code><span>Urgent first, then oldest</span></li>
+        <li><code>list_unreplied_bad_reviews</code><span>With the review text</span></li>
+        <li><code>list_stockout_risks</code><span>2 days of cover, no order coming</span></li>
+        <li><code>list_expiring_stock</code><span>Within 3 days, cost at risk</span></li>
+        <li><code>list_supplier_slips</code><span>Promise versus real lead time</span></li>
+        <li class="group">Write, after a yes</li>
+        <li class="write"><code>escalate_ticket</code><span>Raise to urgent, log the reason</span></li>
+        <li class="write"><code>draft_review_reply</code><span>Save a draft, never publish</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Layer 1</span><span>05</span></div>
+  <aside class="notes">Also mention: list_recent_actions stops repeat escalations, and 11 tests run on a temporary copy of the database. About 25 seconds.</aside>
+</section>
+
+<!-- ========== 6. LAYER 2: SKILL ========== -->
+<section class="slide" aria-label="Slide 6">
+  <div class="frame">
+    <div class="split">
+      <div class="left">
+        <div class="tag reveal">Layer 2 · Skill</div>
+        <h2 class="reveal">The same briefing every morning.</h2>
+        <p class="reveal">It triggers on plain requests like "what needs attention". Pane buttons send narrow requests that skip straight to one action.</p>
+      </div>
+      <ol class="steps reveal">
+        <li><span><b>Score</b> every branch with the scorecard</span></li>
+        <li><span><b>Pick three</b> by combined rank, like the pane</span></li>
+        <li><span><b>Drill down</b> only where a branch was picked</span></li>
+        <li><span><b>Check history</b> so nothing is done twice</span></li>
+        <li><span><b>Propose</b> at most three actions and ask</span></li>
+        <li><span><b>Act</b> only after an explicit yes</span></li>
+      </ol>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Layer 2</span><span>06</span></div>
+  <aside class="notes">The skill also lists pitfalls: old tickets are an aging backlog, numbers are windowed, never claim a reply was published. About 25 seconds.</aside>
+</section>
+
+<!-- ========== 7. LAYER 3: PANE ========== -->
+<section class="slide" aria-label="Slide 7">
+  <div class="frame">
+    <div class="pane-split">
+      <div>
+        <div class="tag reveal">Layer 3 · Desktop plugin</div>
+        <h2 class="reveal" style="font-size:72px">A pane that looks like part of Hermes.</h2>
+        <ul class="reveal">
+          <li>Built from Hermes components and theme colors</li>
+          <li>Click a branch to see its tickets, reviews, and stock</li>
+          <li>Escalate and Draft reply hand off to the agent</li>
+          <li>"Recorded by Hermes" lists every write</li>
+        </ul>
+      </div>
+      <div class="shot reveal"><img src="../assets/pane.webp" alt="The Command Center pane with the headline, totals, and the 12-branch scorecard."></div>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Layer 3</span><span>07</span></div>
+  <aside class="notes">Switch to Hermes Desktop after this slide for the live demo. About 20 seconds.</aside>
+</section>
+
+<!-- ========== 8. THE LOOP / LIVE DEMO ========== -->
+<section class="slide" aria-label="Slide 8">
+  <div class="frame">
+    <h2 class="reveal">Live: from a click to a changed record.</h2>
+    <ol class="loop reveal">
+      <li><b>Click</b><span>"Brief me" in the pane</span></li>
+      <li><b>Prompt</b><span>The pane writes into the chat</span></li>
+      <li><b>Skill</b><span>Hermes calls the MCP tools in order</span></li>
+      <li><b>Approve</b><span>The agent shows the ticket and waits</span></li>
+      <li><b>Refresh</b><span>The pane shows the logged write</span></li>
+    </ol>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Demo</span><span>08</span></div>
+  <aside class="notes">Run python data/seed.py before the session. In Desktop: click Brief me, read the headline, approve one escalation, then show "Recorded by Hermes" and the urgent count going up by one. About 90 seconds.</aside>
+</section>
+
+<!-- ========== 9. PROOF ========== -->
+<section class="slide" aria-label="Slide 9">
+  <div class="frame">
+    <h2 class="reveal">Every action cites what it read.</h2>
+    <div class="proof">
+      <div class="shot reveal"><img src="../assets/actions.webp" alt="Three proposed actions from the agent, each ending with Go ahead?"></div>
+      <div class="reveal">
+        <p><b>TKT-01393</b> has waited 33 days at Katipunan. The agent proposes the escalation with that number as the reason.</p>
+        <p>Nothing is written until the admin answers <b>yes</b>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Output from a real run</span><span>09</span></div>
+  <aside class="notes">Backup slide if the live demo fails. This is a real screenshot from the run. About 20 seconds.</aside>
+</section>
+
+<!-- ========== 10. GUARDRAILS ========== -->
+<section class="slide" aria-label="Slide 10">
+  <div class="frame">
+    <h2 class="reveal">What the agent can touch, and what it cannot.</h2>
+    <div class="guards reveal">
+      <div class="guard"><h3>Two writes only.</h3><p>Escalate a ticket or save a reply draft. No delete, no publish, no edits to other tables.</p></div>
+      <div class="guard"><h3>Every write is logged.</h3><p>Each one adds a row to <code>ops_actions</code> with the reason, and the pane shows it.</p></div>
+      <div class="guard"><h3>A person says yes first.</h3><p>The skill asks "Go ahead?" with the exact text. Running a write twice changes nothing.</p></div>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>ADR 0002</span><span>10</span></div>
+  <aside class="notes">Judges and admins need to trust what the agent can do. That is why the write surface is this small. About 20 seconds.</aside>
+</section>
+
+<!-- ========== 11. CLOSE ========== -->
+<section class="slide close" aria-label="Slide 11">
+  <div class="frame">
+    <h2 class="reveal">Ask Hermes where to send help. Approve what it does next.</h2>
+    <div class="links reveal">
+      <span>Code</span><span>github.com/ahleksu/Camp-Run-with-Hermes-Agent</span>
+      <span>Write-up</span><span>ahleksu.github.io/Camp-Run-with-Hermes-Agent</span>
+      <span>Setup</span><span>docs/SETUP.md · 4 commands</span>
+    </div>
+  </div>
+  <div class="chrome"><span class="mark"><span class="dot"></span>Suki Command Center</span><span>11</span></div>
+  <aside class="notes">Close on the two sentences, then take questions.</aside>
+</section>
+
+</main>
+</div>
+
+<!-- Deck chrome, outside the scaled stage -->
+<div class="progress" id="progress"></div>
+<div class="notes-panel" id="notesPanel" role="note"></div>
+<div class="edit-hotzone" aria-hidden="true"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit</button>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   Keys: arrows, Space, Page Up/Down, Home, End.
+   N toggles presenter notes. E toggles inline editing.
+   The URL hash (#3) keeps your place on reload.
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = [...document.querySelectorAll('.slide')];
+        this.stage = document.getElementById('deckStage');
+        this.progress = document.getElementById('progress');
+        this.notes = document.getElementById('notesPanel');
+        this.current = 0;
+        this.wheelLock = false;
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        const fromHash = parseInt(location.hash.slice(1), 10);
+        this.showSlide(Number.isFinite(fromHash) ? fromHash - 1 : 0);
+    }
+
+    /* Scale the 1920×1080 stage to fit the window, centered, never reflowed. */
+    setupStageScale() {
+        const scale = () => {
+            const f = Math.min(innerWidth / 1920, innerHeight / 1080);
+            const x = (innerWidth - 1920 * f) / 2;
+            const y = (innerHeight - 1080 * f) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${f})`;
+        };
+        scale();
+        addEventListener('resize', scale);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', e => {
+            if (e.target.isContentEditable) return;
+            const next = ['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'];
+            const prev = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
+            if (next.includes(e.key)) { e.preventDefault(); this.showSlide(this.current + 1); }
+            else if (prev.includes(e.key)) { e.preventDefault(); this.showSlide(this.current - 1); }
+            else if (e.key === 'Home') this.showSlide(0);
+            else if (e.key === 'End') this.showSlide(this.slides.length - 1);
+            else if (e.key === 'n' || e.key === 'N') this.notes.classList.toggle('show');
+        });
+    }
+
+    setupTouchNav() {
+        let x0 = null;
+        addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+        addEventListener('touchend', e => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0;
+            if (Math.abs(dx) > 40) this.showSlide(this.current + (dx < 0 ? 1 : -1));
+            x0 = null;
+        });
+    }
+
+    setupWheelNav() {
+        addEventListener('wheel', e => {
+            if (this.wheelLock || Math.abs(e.deltaY) < 30) return;
+            this.wheelLock = true;
+            this.showSlide(this.current + (e.deltaY > 0 ? 1 : -1));
+            setTimeout(() => (this.wheelLock = false), 700);
+        }, { passive: true });
+    }
+
+    showSlide(i) {
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, k) => {
+            s.classList.toggle('active', k === this.current);
+            s.classList.toggle('visible', k === this.current);
+        });
+        this.progress.style.width = `${((this.current + 1) / this.slides.length) * 100}%`;
+        const note = this.slides[this.current].querySelector('aside.notes');
+        this.notes.innerHTML = `<b>Slide ${this.current + 1} of ${this.slides.length}.</b> ${note ? note.textContent : ''}`;
+        history.replaceState(null, '', `#${this.current + 1}`);
+    }
+}
+
+/* ===========================================
+   INLINE EDITING
+   Press E (or hover the top-left corner) to edit text in place.
+   Edits are kept in this browser only (localStorage). Ctrl+S saves an HTML copy.
+   =========================================== */
+const editor = {
+    isActive: false,
+    key: 'suki-deck-edits-v1',
+    targets: () => document.querySelectorAll('.slide h1, .slide h2, .slide h3, .slide p, .slide li, .slide td, .slide .sub span'),
+    load() {
+        try {
+            const saved = JSON.parse(localStorage.getItem(this.key) || '[]');
+            this.targets().forEach((el, i) => { if (saved[i] != null) el.innerHTML = saved[i]; });
+        } catch (_) { /* storage blocked: keep the authored text */ }
+    },
+    save() {
+        try { localStorage.setItem(this.key, JSON.stringify([...this.targets()].map(el => el.innerHTML))); } catch (_) {}
+    },
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+        this.targets().forEach(el => (el.contentEditable = this.isActive ? 'true' : 'false'));
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        document.getElementById('editToggle').textContent = this.isActive ? 'Done' : 'Edit';
+        if (!this.isActive) this.save();
+    }
+};
+
+editor.load();
+const deck = new SlidePresentation();
+
+const editToggle = document.getElementById('editToggle');
+const hotzone = document.querySelector('.edit-hotzone');
+let hideTimeout = null;
+editToggle.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('click', () => editor.toggleEditMode());
+hotzone.addEventListener('mouseenter', () => { clearTimeout(hideTimeout); editToggle.classList.add('show'); });
+hotzone.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+editToggle.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+editToggle.addEventListener('mouseleave', () => { hideTimeout = setTimeout(() => { if (!editor.isActive) editToggle.classList.remove('show'); }, 400); });
+document.addEventListener('keydown', e => {
+    if ((e.key === 'e' || e.key === 'E') && !e.target.isContentEditable) editor.toggleEditMode();
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        editor.save();
+        const blob = new Blob(['<!DOCTYPE html>\n' + document.documentElement.outerHTML], { type: 'text/html' });
+        const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'suki-command-center-deck.html' });
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+});
+document.addEventListener('input', () => editor.save());
+</script>
+</body>
+</html>

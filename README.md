@@ -36,6 +36,8 @@ python3 -m unittest discover -s tests   # core tests, run on a temp copy of the 
 
 Step-by-step setup and demo script: **[docs/SETUP.md](docs/SETUP.md)**.
 
+The submission write-up and slides live in `docs/`, and GitHub Pages serves them: [docs/index.html](docs/index.html) is the write-up, and [docs/deck/index.html](docs/deck/index.html) is the slides (arrow keys to move, N for presenter notes). To publish, open the repository on GitHub, go to Settings, then Pages, and deploy from the `main` branch with the `/docs` folder.
+
 The pane's backend only loads when `suki-command-center` is in `plugins.enabled` in `~/.hermes/config.yaml`; restart the gateway after adding it. `python data/seed.py` resets the data, including the `ops_actions` log.
 
 ---
