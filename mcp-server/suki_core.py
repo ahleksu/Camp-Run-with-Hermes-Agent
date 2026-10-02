@@ -163,6 +163,24 @@ def list_stockout_risks(branch_code: str | None = None, limit: int = 10) -> list
     )
 
 
+def list_expiring_stock(branch_code: str | None = None, limit: int = 10, as_of: str | None = None) -> list[dict]:
+    """Stock on hand whose nearest expiry is within EXPIRY_WINDOW_DAYS, largest value first."""
+    now = _as_of(as_of)
+    bf, bp = _branch_filter(branch_code)
+    return query(
+        f"""
+        SELECT b.code AS branch, p.sku, p.name AS product, p.category, i.on_hand, i.nearest_expiry_date AS expires_on,
+               CAST(julianday(i.nearest_expiry_date) - julianday(date(:now)) AS INTEGER) AS days_left,
+               ROUND(i.on_hand * p.cost_price, 2) AS cost_at_risk
+        FROM inventory i JOIN branches b ON b.id = i.branch_id JOIN products p ON p.id = i.product_id
+        WHERE i.on_hand > 0 AND i.nearest_expiry_date IS NOT NULL
+          AND i.nearest_expiry_date <= date(:now, :exp) {bf}
+        ORDER BY cost_at_risk DESC, i.nearest_expiry_date LIMIT :limit
+        """,
+        {"now": now, "exp": f"+{EXPIRY_WINDOW_DAYS} day", "limit": min(int(limit), 50), **bp},
+    )
+
+
 def list_supplier_slips(min_orders: int = 10) -> list[dict]:
     """Suppliers ranked by actual minus promised lead time, among received orders."""
     return query(

@@ -133,6 +133,14 @@ def list_stockout_risks(branch_code: str | None = None, limit: int = 10) -> list
 
 
 @mcp.tool()
+def list_expiring_stock(branch_code: str | None = None, limit: int = 10, as_of: str | None = None) -> list[dict]:
+    """Stock that expires within 3 days, largest cost at risk first, with days_left
+    and cost_at_risk. Use when the scorecard shows a branch with many expiring items,
+    to decide what to mark down or move first."""
+    return core.list_expiring_stock(branch_code, limit, as_of)
+
+
+@mcp.tool()
 def list_supplier_slips(min_orders: int = 10) -> list[dict]:
     """Suppliers ranked by how much longer deliveries actually take than the
     lead time they promise, plus the share of partial deliveries. Use to explain

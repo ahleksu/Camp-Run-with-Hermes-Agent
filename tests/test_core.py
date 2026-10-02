@@ -32,6 +32,13 @@ class Reads(unittest.TestCase):
         self.assertTrue(all(r["branch"] == "TMR" for r in rows))
         self.assertEqual(core.list_supplier_slips()[0]["supplier"], "Visayas Canning Corp.")
 
+    def test_expiring_stock_matches_scorecard_count(self):
+        sc = {b["code"]: b["expiring_soon"] for b in core.branch_scorecard()["branches"]}
+        rows = core.list_expiring_stock("alb", limit=500)
+        self.assertEqual(len(rows), min(sc["ALB"], 50))
+        self.assertTrue(all(r["days_left"] <= 3 and r["cost_at_risk"] >= 0 for r in rows))
+        self.assertEqual(rows, sorted(rows, key=lambda r: -r["cost_at_risk"]))
+
 
 class Writes(unittest.TestCase):
     def test_escalate_logs_and_is_idempotent(self):
@@ -55,3 +62,43 @@ class Writes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PaneBackend(unittest.TestCase):
+    """The REST routes behind the desktop pane (skipped when fastapi is not installed)."""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            import importlib.util
+            from fastapi import FastAPI
+            from fastapi.testclient import TestClient
+        except ImportError:
+            raise unittest.SkipTest("fastapi not installed")
+        path = os.path.join(ROOT, "desktop-plugin", "suki-command-center", "dashboard", "plugin_api.py")
+        spec = importlib.util.spec_from_file_location("plugin_api", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        app = FastAPI()
+        app.include_router(mod.router)
+        cls.client = TestClient(app)
+
+    def test_scorecard_totals_match_core(self):
+        data = self.client.get("/scorecard").json()
+        self.assertEqual(data["totals"]["stockout_risks"], 67)
+        self.assertEqual(len(data["branches"]), 12)
+
+    def test_branch_detail_and_unknown_branch(self):
+        ok = self.client.get("/branch/tmr")
+        self.assertEqual(ok.status_code, 200)
+        self.assertEqual(set(ok.json()), {"tickets", "reviews", "stockouts", "expiring"})
+        self.assertEqual(self.client.get("/branch/zzz").status_code, 404)
+
+    def test_actions_reflect_writes_and_suppliers_are_ranked(self):
+        t = next(r for r in core.list_open_tickets(limit=50) if r["priority"] != "urgent")
+        core.escalate_ticket(t["ticket_number"], "pane test")
+        first = self.client.get("/actions?limit=1").json()[0]
+        self.assertEqual(first["target"], t["ticket_number"])
+        slips = self.client.get("/suppliers?limit=2").json()
+        self.assertEqual(len(slips), 2)
+        self.assertGreaterEqual(slips[0]["slip_days"], slips[1]["slip_days"])

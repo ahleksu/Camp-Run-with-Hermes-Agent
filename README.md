@@ -25,14 +25,16 @@ An admin view across all 12 branches: delivery on-time rate, open/urgent tickets
 | Layer | Where | What |
 |---|---|---|
 | Query core | `mcp-server/suki_core.py` | All SQL; shared by the two doors below |
-| 1 · MCP | `mcp-server/server.py` | 6 read tools, plus `escalate_ticket` and `draft_review_reply` (logged to `ops_actions`) |
+| 1 · MCP | `mcp-server/server.py` | 7 read tools, plus `escalate_ticket` and `draft_review_reply` (logged to `ops_actions`) |
 | 2 · Skill | `skills/suki-command-center/` | Scorecard, then drill-downs, then at most 3 confirmed actions |
 | 3 · Plugin | `desktop-plugin/suki-command-center/` | Pane with scorecard and drill-down, backed by `dashboard/plugin_api.py` |
 
 ```bash
 python3 -m unittest discover -s tests   # core tests, run on a temp copy of the DB
-./scripts/install.sh                    # symlink skill + plugin, prints the remaining steps
+./scripts/install.sh                    # copy skill and plugin, print the remaining steps
 ```
+
+Step-by-step setup and demo script: **[docs/SETUP.md](docs/SETUP.md)**.
 
 The pane's backend only loads when `suki-command-center` is in `plugins.enabled` in `~/.hermes/config.yaml`; restart the gateway after adding it. `python data/seed.py` resets the data, including the `ops_actions` log.
 
@@ -152,7 +154,7 @@ After every change: **restart Hermes**, then `hermes mcp test suki`. Tools appea
 
 ## Layer 2 — Skill
 
-📁 `skills/suki-team-skill/SKILL.md`
+📁 `skills/suki-command-center/SKILL.md` (the template name was `suki-team-skill`)
 
 A skill is a markdown procedure Hermes loads on demand. It teaches the agent **when** to act and **how to chain your MCP tools** into a real multi-step workflow — the sequence, the decision rules, and the output format.
 
@@ -171,9 +173,11 @@ Installed skills take effect in **new sessions** — start a new chat after inst
 
 ## Layer 3 — Desktop plugin
 
-📁 `desktop-plugin/suki-panel/plugin.js`
+📁 `desktop-plugin/suki-command-center/desktop/plugin.js`
 
 A pane inside Hermes Desktop with buttons that trigger your skill, plus a ⌘K / Ctrl+K command. It's a single JavaScript file — no build step.
+
+This fork's plugin has a Python backend, so it installs as a full plugin: `./scripts/install.sh` copies it into `~/.hermes/plugins/`, and `plugins.enabled` in `config.yaml` turns it on (see [docs/SETUP.md](docs/SETUP.md)). The commands below are the template route for a frontend-only pane.
 
 ```bash
 # Rename the folder AND the `id` in plugin.js (they must match), then:
@@ -253,15 +257,19 @@ Camp-Run-with-Hermes-Agent/
 │   ├── seed.py               ← deterministic generator = reset command
 │   └── SCHEMA.md             ← tables, columns, relationships, enums
 ├── mcp-server/
-│   └── server.py             ← Layer 1 template
+│   ├── server.py             ← Layer 1: MCP tools
+│   └── suki_core.py          ← shared query core
 ├── skills/
-│   └── suki-team-skill/
-│       └── SKILL.md          ← Layer 2 template
+│   └── suki-command-center/
+│       └── SKILL.md          ← Layer 2: the playbook
 ├── desktop-plugin/
-│   └── suki-panel/
-│       └── plugin.js         ← Layer 3 template
+│   └── suki-command-center/  ← Layer 3: pane + REST backend
+├── scripts/install.sh        ← installs skill and plugin into ~/.hermes
+├── tests/test_core.py
 └── docs/
-    └── JUDGING.md            ← mechanics & scoring
+    ├── SETUP.md              ← setup and demo steps
+    ├── JUDGING.md            ← mechanics & scoring
+    └── adr/
 ```
 
 ---
