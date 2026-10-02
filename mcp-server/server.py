@@ -5,7 +5,8 @@
 """
 LAYER 1 — MCP SERVER (the hands)
 
-Your team's MCP server over the Suki Mart sandbox (data/store.db).
+Suki Mart Command Center tools over the sandbox (data/store.db).
+All dates are relative to the sandbox "now" unless `as_of` is given.
 
 Run standalone to check it starts (Ctrl+C to stop):
     uv run mcp-server/server.py
@@ -30,6 +31,8 @@ import sqlite3
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+
+import suki_core as core  # command-center queries, shared with the desktop plugin (ADR 0001)
 
 # The database path is resolved relative to THIS file, not the working
 # directory — Hermes launches MCP servers from its own folder.
@@ -92,12 +95,72 @@ def list_branches(city: str | None = None) -> list[dict]:
     return query(sql + " ORDER BY code")
 
 
-# TODO(team): add your domain tools below. For example:
-#
-# @mcp.tool()
-# def your_tool_name(branch_code: str, days: int = 7) -> list[dict]:
-#     """What business question this answers, and when the agent should use it."""
-#     return query("SELECT ... WHERE ... ", (branch_code, days))
+# --------------------------------------------------------------------------
+# Command center: reads. One tool = one business question. SQL lives in suki_core.
+# --------------------------------------------------------------------------
+@mcp.tool()
+def branch_scorecard(days: int = 30, as_of: str | None = None) -> dict:
+    """Start here for "how are the branches doing". One row per branch: on-time
+    delivery %, failed deliveries, open and urgent tickets, unreplied 1-2 star
+    reviews, stockout risks, items expiring within 3 days, and absence %.
+    Delivery/review/absence figures cover the last `days` days (default 30);
+    tickets, stockouts and expiry are current. Also returns loyalty points
+    expiring in the next 30 days. `as_of` is YYYY-MM-DD; default is sandbox now."""
+    return core.branch_scorecard(days, as_of)
+
+
+@mcp.tool()
+def list_open_tickets(branch_code: str | None = None, limit: int = 10, as_of: str | None = None) -> list[dict]:
+    """Open or pending support tickets, most urgent then oldest first. Use after
+    the scorecard shows a branch with many open or urgent tickets. Note that
+    age_days can be large: the backlog contains tickets months old."""
+    return core.list_open_tickets(branch_code, limit, as_of)
+
+
+@mcp.tool()
+def list_unreplied_bad_reviews(branch_code: str | None = None, days: int = 30, limit: int = 10,
+                               as_of: str | None = None) -> list[dict]:
+    """1-2 star reviews the store has not replied to, worst and newest first,
+    with review_id (needed by draft_review_reply) and the review text."""
+    return core.list_unreplied_bad_reviews(branch_code, days, limit, as_of)
+
+
+@mcp.tool()
+def list_stockout_risks(branch_code: str | None = None, limit: int = 10) -> list[dict]:
+    """Products with 2 days of cover or less and no pending or in-transit
+    purchase order, lowest cover first, with the supplier and its promised lead time."""
+    return core.list_stockout_risks(branch_code, limit)
+
+
+@mcp.tool()
+def list_supplier_slips(min_orders: int = 10) -> list[dict]:
+    """Suppliers ranked by how much longer deliveries actually take than the
+    lead time they promise, plus the share of partial deliveries. Use to explain
+    stockouts or to decide which supplier to chase."""
+    return core.list_supplier_slips(min_orders)
+
+
+@mcp.tool()
+def list_recent_actions(limit: int = 20) -> list[dict]:
+    """Escalations and reply drafts recorded by the write tools, newest first."""
+    return core.list_actions(limit)
+
+
+# --------------------------------------------------------------------------
+# Command center: writes (ADR 0002). Confirm with the admin before calling.
+# --------------------------------------------------------------------------
+@mcp.tool()
+def escalate_ticket(ticket_number: str, reason: str) -> dict:
+    """WRITE. Raise an open or pending ticket (e.g. "TKT-00257") to urgent
+    priority and log the reason. Ask the admin to confirm first."""
+    return core.escalate_ticket(ticket_number, reason)
+
+
+@mcp.tool()
+def draft_review_reply(review_id: int, reply_text: str) -> dict:
+    """WRITE. Save a proposed reply to an unreplied review as a draft. It is
+    never published. Ask the admin to confirm the text first."""
+    return core.draft_review_reply(review_id, reply_text)
 
 
 if __name__ == "__main__":
