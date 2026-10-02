@@ -98,6 +98,8 @@ code, .mono { font-family: var(--font-mono); font-size: 0.82em; }
 .title h1 { font-size: 168px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.92; max-width: 1500px; }
 .title .sub { margin-top: 56px; display: flex; gap: 40px; font-size: 32px; color: var(--ink-2); }
 .title .sub span + span { padding-left: 40px; border-left: 2px solid var(--rule); }
+.title .sub span { white-space: nowrap; }
+.title .team { margin-top: 28px; font: 700 40px/1.2 var(--font-display); letter-spacing: -0.015em; color: var(--ink); }
 
 /* ===========================================
    SLIDE 2: PROBLEM NUMBERS
@@ -221,7 +223,8 @@ aside.notes { display: none; }
 <section class="slide title active" aria-label="Slide 1">
   <div class="frame">
     <h1 class="reveal">Which branch needs help first?</h1>
-    <div class="sub reveal"><span>Team Bantay Suki: Justine, Alex, JP and Gab</span><span>Suki Command Center on Hermes Agent</span><span>CAMP / RUN · October 2, 2026</span></div>
+    <div class="sub reveal"><span>Team Bantay Suki</span><span>Suki Command Center on Hermes Agent</span><span>CAMP / RUN · October 2, 2026</span></div>
+    <div class="team reveal">Justine · Alex · JP · Gab</div>
   </div>
   <div class="chrome"><span class="mark"><span class="dot"></span>Suki Mart · 12 branches · Metro Manila</span><span>01</span></div>
   <aside class="notes">Introduce the team: we are Bantay Suki, Justine, Alex, JP and Gab. Bantay means guard, and suki means a loyal customer. Then ask the question an operations head asks every morning. Do not explain the stack yet. About 15 seconds.</aside>
