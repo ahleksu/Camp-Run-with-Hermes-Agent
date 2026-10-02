@@ -1,0 +1,3 @@
+name: suki-command-center
+version: 0.1.0
+description: Suki Mart command center pane (desktop) with its own read-only data backend.

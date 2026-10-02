@@ -18,6 +18,26 @@ Everything runs **locally on your laptop** — no cloud, no accounts, no API key
 
 ---
 
+## Suki Command Center (this fork's build)
+
+An admin view across all 12 branches: delivery on-time rate, open/urgent tickets, unreplied bad reviews, stockout risks, expiring stock, absence, and supplier slips. Terms are in [GLOSSARY.md](GLOSSARY.md); design decisions in [docs/adr](docs/adr).
+
+| Layer | Where | What |
+|---|---|---|
+| Query core | `mcp-server/suki_core.py` | All SQL; shared by the two doors below |
+| 1 · MCP | `mcp-server/server.py` | 6 read tools, plus `escalate_ticket` and `draft_review_reply` (logged to `ops_actions`) |
+| 2 · Skill | `skills/suki-command-center/` | Scorecard, then drill-downs, then at most 3 confirmed actions |
+| 3 · Plugin | `desktop-plugin/suki-command-center/` | Pane with scorecard and drill-down, backed by `dashboard/plugin_api.py` |
+
+```bash
+python3 -m unittest discover -s tests   # core tests, run on a temp copy of the DB
+./scripts/install.sh                    # symlink skill + plugin, prints the remaining steps
+```
+
+The pane's backend only loads when `suki-command-center` is in `plugins.enabled` in `~/.hermes/config.yaml`; restart the gateway after adding it. `python data/seed.py` resets the data, including the `ops_actions` log.
+
+---
+
 ## Contents
 
 - [The sandbox: Suki Mart](#the-sandbox-suki-mart)
